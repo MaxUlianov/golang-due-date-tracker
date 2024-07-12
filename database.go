@@ -1,4 +1,4 @@
-package data_policy_tracker
+package main
 
 import (
 	"database/sql"
@@ -17,6 +17,7 @@ type DBConfig struct {
 	Host     string
 	Port     string
 	Name     string
+	Params   string
 }
 
 func NewDBConfig() *DBConfig {
@@ -26,6 +27,7 @@ func NewDBConfig() *DBConfig {
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		Name:     os.Getenv("DB_NAME"),
+		Params:   "sslmode=disable",
 	}
 }
 
@@ -33,9 +35,14 @@ func handlePostgres() {
 	postgresConfig := NewDBConfig()
 
 	connectString := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
+		"postgres://%s:%s@%s:%s/%s?%s",
 		postgresConfig.User,
-		postgresConfig.Password, postgresConfig.Host, postgresConfig.Port, postgresConfig.Name)
+		postgresConfig.Password,
+		postgresConfig.Host,
+		postgresConfig.Port,
+		postgresConfig.Name,
+		postgresConfig.Params,
+	)
 
 	var err error
 	db, err = sql.Open("postgres", connectString)
@@ -49,5 +56,5 @@ func handlePostgres() {
 	if pingErr != nil {
 		log.Fatal(pingErr)
 	}
-	fmt.Println("Connected!")
+	log.Println("Database Connected!")
 }

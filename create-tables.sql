@@ -12,6 +12,5 @@ CREATE TABLE records (
   id          SERIAL NOT NULL PRIMARY KEY,
   title       VARCHAR(64) NOT NULL,
   comment     VARCHAR(128),
-  last_date   DATE NOT NULL,
-  expiry_date DATE NOT NULL
+  last_date   DATE NOT NULL
 );
