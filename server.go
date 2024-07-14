@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 )
 
 // cache the HTML templates
@@ -23,8 +24,42 @@ func renderTemplate(w http.ResponseWriter, tmpl string, title string) {
 	}
 }
 
+func renderDataTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
+	err := templates.ExecuteTemplate(w, tmpl+".html", data)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "record_list", "")
+}
+
+var mockRecords = []dataRecord{
+	{
+		Id:       1,
+		Title:    "Record 1",
+		Comment:  "This is the first record.",
+		LastDate: time.Now().AddDate(0, 0, -7),
+	},
+	{
+		Id:       2,
+		Title:    "Record 2",
+		Comment:  "This is the second record.",
+		LastDate: time.Now().AddDate(0, 0, -3),
+	},
+	{
+		Id:       3,
+		Title:    "Record 3",
+		Comment:  "This is the third record.",
+		LastDate: time.Now(),
+	},
+}
+
+func listViewHandler(w http.ResponseWriter, r *http.Request) {
+	renderDataTemplate(w, "record_list", mockRecords)
 }
 
 // var validPath = regexp.MustCompile("^/web/([a-zA-Z0-9]+)$")
@@ -46,7 +81,10 @@ func runServer() {
 	router := http.NewServeMux()
 	log.Printf("Server starting on %s ...\n", port)
 
-	router.HandleFunc("GET /records", viewHandler)
+	// static files (CSS)
+	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+
+	router.HandleFunc("GET /records", listViewHandler)
 
 	server := http.Server{
 		Addr:    port,
