@@ -20,19 +20,33 @@ type DBConfig struct {
 	Params   string
 }
 
-func NewDBConfig() *DBConfig {
-	return &DBConfig{
-		User:     os.Getenv("DB_USER"),
-		Password: os.Getenv("DB_PASSWORD"),
-		Host:     os.Getenv("DB_HOST"),
-		Port:     os.Getenv("DB_PORT"),
-		Name:     os.Getenv("DB_NAME"),
-		Params:   "sslmode=disable",
+func NewDBConfig() (*DBConfig, error) {
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	name := os.Getenv("DB_NAME")
+
+	if user == "" || password == "" || host == "" || port == "" || name == "" {
+		return nil, fmt.Errorf("missing environment variables for DB connection")
 	}
+
+	return &DBConfig{
+		User:     user,
+		Password: password,
+		Host:     host,
+		Port:     port,
+		Name:     name,
+		Params:   "sslmode=disable",
+	}, nil
 }
 
 func handlePostgres() {
-	postgresConfig := NewDBConfig()
+
+	postgresConfig, configErr := NewDBConfig()
+	if configErr != nil {
+		log.Fatalf("error creating database configuration: %v", configErr)
+	}
 
 	connectString := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?%s",

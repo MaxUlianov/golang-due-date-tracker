@@ -39,19 +39,19 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 var mockRecords = []dataRecord{
 	{
-		Id:       1,
+		Id:       "0000",
 		Title:    "Record 1",
 		Comment:  "This is the first record.",
 		LastDate: time.Now().AddDate(0, 0, -7),
 	},
 	{
-		Id:       2,
+		Id:       "0000",
 		Title:    "Record 2",
 		Comment:  "This is the second record.",
 		LastDate: time.Now().AddDate(0, 0, -3),
 	},
 	{
-		Id:       3,
+		Id:       "0000",
 		Title:    "Record 3",
 		Comment:  "This is the third record.",
 		LastDate: time.Now(),
