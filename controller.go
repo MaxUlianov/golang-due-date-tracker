@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 )
@@ -36,6 +37,19 @@ func getRecords() ([]dataRecord, error) {
 	return records, nil
 }
 
+func getRecordById(recordId string) (dataRecord, error) {
+	var rec dataRecord
+
+	row := db.QueryRow("SELECT * FROM records WHERE id = $1", recordId)
+	if err := row.Scan(&rec.Id, &rec.Title, &rec.Comment, &rec.LastDate); err != nil {
+		if err == sql.ErrNoRows {
+			return rec, fmt.Errorf("recordById %s: no such record", recordId)
+		}
+		return rec, fmt.Errorf("recordById %s: %v", recordId, err)
+	}
+	return rec, nil
+}
+
 func createRecord(record dataRecord) (string, error) {
 
 	result, err := db.Exec("INSERT INTO records (title, comment, last_date) VALUES ($1, $2, to_timestamp($3, 'YYYY-MM-DD'))", record.Title, record.Comment, record.LastDate)
@@ -51,7 +65,7 @@ func createRecord(record dataRecord) (string, error) {
 
 func updateRecord(record dataRecord) (string, error) {
 
-	result, err := db.Exec("UPDATE records SET title = ?, comment = ?, last_date = ?", record.Title, record.Comment, record.LastDate)
+	result, err := db.Exec("UPDATE records SET title = $1, comment = $2, last_date = to_timestamp($3, 'YYYY-MM-DD') WHERE id = $4", record.Title, record.Comment, record.LastDate, record.Id)
 	if err != nil {
 		return "0", fmt.Errorf("addRecord: %v", err)
 	}
@@ -62,8 +76,8 @@ func updateRecord(record dataRecord) (string, error) {
 	return string(id), nil
 }
 
-func deleteRecord(record dataRecord) (string, error) {
-	_, err := db.Exec("DELETE FROM records WHERE id = ?", record.Id)
+func deleteRecord(recordId string) (string, error) {
+	_, err := db.Exec("DELETE FROM records WHERE id = $1", recordId)
 
 	if err != nil {
 		return "0", fmt.Errorf("addRecord: %v", err)

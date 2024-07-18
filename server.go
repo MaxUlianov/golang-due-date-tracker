@@ -58,8 +58,26 @@ var mockRecords = []dataRecord{
 	},
 }
 
-func listViewHandler(w http.ResponseWriter, r *http.Request) {
-	renderDataTemplate(w, "record_list", mockRecords)
+func recordListViewHandler(w http.ResponseWriter, r *http.Request) {
+	records, err := getRecords()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	renderDataTemplate(w, "record_list", records)
+}
+
+func recordDetailsViewHandler(w http.ResponseWriter, r *http.Request) {
+	recordId := r.PathValue("recordId")
+
+	record, err := getRecordById(recordId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	renderDataTemplate(w, "record_details", record)
 }
 
 // var validPath = regexp.MustCompile("^/web/([a-zA-Z0-9]+)$")
@@ -82,9 +100,12 @@ func runServer() {
 	log.Printf("Server starting on %s ...\n", port)
 
 	// static files (CSS)
-	router.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
+	router.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 
-	router.HandleFunc("GET /records", listViewHandler)
+	router.HandleFunc("GET /records", recordListViewHandler)
+	router.HandleFunc("GET /", recordListViewHandler)
+
+	router.HandleFunc("GET /records/{recordId}", recordDetailsViewHandler)
 
 	server := http.Server{
 		Addr:    port,

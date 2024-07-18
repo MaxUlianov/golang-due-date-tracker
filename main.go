@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"time"
 )
 
 func main() {
@@ -15,17 +14,20 @@ func main() {
 	}
 	fmt.Printf("Records found: \n%v\n", records)
 
-	var data = dataRecord{
-		Title:    "Record 1",
-		Comment:  "This is the first record.",
-		LastDate: time.Now(),
-	}
+	// var data = dataRecord{
+	// 	Id:       "a15893d3-9e39-409f-b985-6094bca7c72e",
+	// 	Title:    "Record 3",
+	// 	Comment:  "This is the third (FIXED) record.",
+	// 	LastDate: time.Now(),
+	// }
 
-	log.Println(data)
+	// log.Println(data)
 
-	res, err := createRecord(data)
-	log.Printf("res: %s, err: %v", res, err)
+	// res, err := createRecord(data)
+	// res, err := updateRecord(data)
+	// res, err := deleteRecord(data.Id)
+	// log.Printf("res: %s, err: %v", res, err)
 
-	// log.Println("running server")
-	// runServer()
+	log.Println("running server")
+	runServer()
 }
