@@ -11,6 +11,7 @@ import (
 var templates = template.Must(template.ParseFiles(
 	"templates/navbar.html",
 	"templates/record_details.html",
+	"templates/record_delete.html",
 	"templates/record_form.html",
 	"templates/record_list.html",
 ))
@@ -80,6 +81,27 @@ func recordDetailsViewHandler(w http.ResponseWriter, r *http.Request) {
 	renderDataTemplate(w, "record_details", record)
 }
 
+func recordDeleteViewHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		// Handle the POST request for deletion
+
+		recordId := r.PathValue("recordId")
+
+		_, err := deleteRecord(recordId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	recordId := r.PathValue("recordId")
+
+	renderTemplate(w, "record_delete", recordId)
+}
+
 // var validPath = regexp.MustCompile("^/web/([a-zA-Z0-9]+)$")
 
 // func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -106,6 +128,9 @@ func runServer() {
 	router.HandleFunc("GET /", recordListViewHandler)
 
 	router.HandleFunc("GET /records/{recordId}", recordDetailsViewHandler)
+
+	router.HandleFunc("GET /records/delete/{recordId}", recordDeleteViewHandler)
+	router.HandleFunc("POST /records/delete/{recordId}", recordDeleteViewHandler)
 
 	server := http.Server{
 		Addr:    port,
