@@ -35,31 +35,6 @@ func renderDataTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	renderStringTemplate(w, "record_list", "")
-}
-
-var mockRecords = []dataRecord{
-	{
-		Id:       "0000",
-		Title:    "Record 1",
-		Comment:  "This is the first record.",
-		LastDate: time.Now().AddDate(0, 0, -7),
-	},
-	{
-		Id:       "0000",
-		Title:    "Record 2",
-		Comment:  "This is the second record.",
-		LastDate: time.Now().AddDate(0, 0, -3),
-	},
-	{
-		Id:       "0000",
-		Title:    "Record 3",
-		Comment:  "This is the third record.",
-		LastDate: time.Now(),
-	},
-}
-
 func recordListViewHandler(w http.ResponseWriter, r *http.Request) {
 	records, err := getRecords()
 	if err != nil {
@@ -119,6 +94,52 @@ func recordCreateViewHandler(w http.ResponseWriter, r *http.Request) {
 	renderDataTemplate(w, "record_input", nil)
 }
 
+func recordUpdateViewHandler(w http.ResponseWriter, r *http.Request) {
+
+	recordId := r.PathValue("recordId")
+
+	if r.Method == http.MethodPost {
+		// Handle the POST request for update
+
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		// prepare lastDate from POST string to time.Time
+		lastDate, err := time.Parse("2006-01-02", r.FormValue("lastDate"))
+		if err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		// get POST data
+		record := dataRecord{
+			Id:       recordId,
+			Title:    r.FormValue("title"),
+			LastDate: lastDate,
+			Comment:  r.FormValue("comment"),
+		}
+
+		_, createErr := updateRecord(record)
+		if createErr != nil {
+			http.Error(w, "Error updating record", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	recordToUpdate, err := getRecordById(recordId)
+	if err != nil {
+		http.Error(w, "Error getting record to update", http.StatusInternalServerError)
+		return
+	}
+
+	renderDataTemplate(w, "record_input", recordToUpdate)
+}
+
 func recordDeleteViewHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		// Handle the POST request for deletion
@@ -140,20 +161,6 @@ func recordDeleteViewHandler(w http.ResponseWriter, r *http.Request) {
 	renderStringTemplate(w, "record_delete", recordId)
 }
 
-// var validPath = regexp.MustCompile("^/web/([a-zA-Z0-9]+)$")
-
-// func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-//         return func(w http.ResponseWriter, r *http.Request) {
-//                 m := validPath.FindStringSubmatch(r.URL.Path)
-//                 if m == nil {
-//                         http.NotFound(w, r)
-//                         return
-//                 }
-
-//                 fn(w, r, m[1])
-//         }
-// }
-
 func runServer() {
 	port := ":8000"
 	router := http.NewServeMux()
@@ -172,6 +179,9 @@ func runServer() {
 
 	router.HandleFunc("GET /records/update/", recordCreateViewHandler)
 	router.HandleFunc("POST /records/update/", recordCreateViewHandler)
+
+	router.HandleFunc("GET /records/update/{recordId}", recordUpdateViewHandler)
+	router.HandleFunc("POST /records/update/{recordId}", recordUpdateViewHandler)
 
 	server := http.Server{
 		Addr:    port,
