@@ -13,11 +13,12 @@ var templates = template.Must(template.ParseFiles(
 	"templates/record_details.html",
 	"templates/record_delete.html",
 	"templates/record_form.html",
+	"templates/record_input.html",
 	"templates/record_list.html",
 ))
 
-func renderTemplate(w http.ResponseWriter, tmpl string, title string) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", title)
+func renderStringTemplate(w http.ResponseWriter, tmpl string, str string) {
+	err := templates.ExecuteTemplate(w, tmpl+".html", str)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -35,7 +36,7 @@ func renderDataTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "record_list", "")
+	renderStringTemplate(w, "record_list", "")
 }
 
 var mockRecords = []dataRecord{
@@ -81,6 +82,43 @@ func recordDetailsViewHandler(w http.ResponseWriter, r *http.Request) {
 	renderDataTemplate(w, "record_details", record)
 }
 
+func recordCreateViewHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		// Handle the POST request for creation
+
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		// prepare lastDate from POST string to time.Time
+		lastDate, err := time.Parse("2006-01-02", r.FormValue("lastDate"))
+		if err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		// get POST data
+		record := dataRecord{
+			Title:    r.FormValue("title"),
+			LastDate: lastDate,
+			Comment:  r.FormValue("comment"),
+		}
+
+		_, createErr := createRecord(record)
+		if createErr != nil {
+			http.Error(w, "Error creating new record", http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	renderDataTemplate(w, "record_input", nil)
+}
+
 func recordDeleteViewHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		// Handle the POST request for deletion
@@ -99,7 +137,7 @@ func recordDeleteViewHandler(w http.ResponseWriter, r *http.Request) {
 
 	recordId := r.PathValue("recordId")
 
-	renderTemplate(w, "record_delete", recordId)
+	renderStringTemplate(w, "record_delete", recordId)
 }
 
 // var validPath = regexp.MustCompile("^/web/([a-zA-Z0-9]+)$")
@@ -131,6 +169,9 @@ func runServer() {
 
 	router.HandleFunc("GET /records/delete/{recordId}", recordDeleteViewHandler)
 	router.HandleFunc("POST /records/delete/{recordId}", recordDeleteViewHandler)
+
+	router.HandleFunc("GET /records/update/", recordCreateViewHandler)
+	router.HandleFunc("POST /records/update/", recordCreateViewHandler)
 
 	server := http.Server{
 		Addr:    port,

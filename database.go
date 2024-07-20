@@ -62,7 +62,7 @@ func handlePostgres() {
 	db, err = sql.Open("postgres", connectString)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("database connection error: %w", err))
 	}
 
 	// check connect
