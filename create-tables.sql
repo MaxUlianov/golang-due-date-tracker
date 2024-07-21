@@ -12,5 +12,6 @@ CREATE TABLE records (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title       VARCHAR(64) NOT NULL,
   comment     VARCHAR(128),
-  last_date   DATE NOT NULL
+  last_date   DATE NOT NULL,
+  created_by  UUID REFERENCES app_users(id) ON DELETE CASCADE
 );
