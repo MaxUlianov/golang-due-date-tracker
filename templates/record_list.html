@@ -22,9 +22,19 @@
 
                     <div class="flex items-center">
                         
-                        <div class="bg-green-500 text-white font-bold py-2 px-4 my-2 mx-1 rounded-xl">
-                            <span>{{ .LastDate.Format "2006-01-02" }}</span>
-                        </div>
+                        {{ if eq .TimeCode 0 }}
+                            <div class="bg-green-500 text-white font-bold py-2 px-4 my-2 rounded-xl">
+                                <span>{{ .TimeLeft }} days left | {{ .LastDate.Format "2006-01-02" }}</span>
+                            </div>
+                        {{ else if eq .TimeCode 1 }}
+                            <div class="bg-orange-400 text-white font-bold py-2 px-4 my-2 mx-1 rounded-xl">
+                                <span>{{ .TimeLeft }} days left | {{ .LastDate.Format "2006-01-02" }}</span>
+                            </div>
+                        {{ else if eq .TimeCode 2 }}
+                            <div class="bg-red-400 text-white font-bold py-2 px-4 my-2 mx-1 rounded-xl">
+                                <span>Due: {{ .TimeLeft }} days | {{ .LastDate.Format "2006-01-02" }}</span>
+                            </div>
+                        {{ end }}
 
                         <!-- the edit icon -->
                         <div class="mx-1">

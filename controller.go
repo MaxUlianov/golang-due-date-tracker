@@ -2,7 +2,9 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -13,9 +15,66 @@ type dataRecord struct {
 	LastDate time.Time
 }
 
+type dataRecordExtended struct {
+	dataRecord
+	TimeLeft int64
+	TimeCode int64
+}
+
+type Config struct {
+	DefaultInterval string `json:"defaultInterval"`
+}
+
+func LoadInterval(filename string) time.Duration {
+	var defaultInterval = 365 * 24 * time.Hour
+
+	var config Config
+
+	// read the config file
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return defaultInterval
+	}
+
+	// get JSON data into the config struct
+	if err := json.Unmarshal(data, &config); err != nil {
+		return defaultInterval
+	}
+
+	// rarse the config interval string into time.Duration
+	interval, err := time.ParseDuration(config.DefaultInterval)
+	if err != nil {
+		return defaultInterval
+	}
+
+	return interval
+}
+
+func checkTimeInterval(t time.Time, interval time.Duration) (int64, int64) {
+	// add interval to t time to add the expiration time
+	t = t.Add(interval)
+
+	now := time.Now()
+	duration := t.Sub(now)
+
+	threshold := interval / 12
+
+	if duration < 0 {
+		return -1 * int64(duration.Hours()/24), 2 // due
+	}
+	if duration > 0 && duration <= threshold {
+		return int64(duration.Hours() / 24), 1 // soon
+	}
+
+	return int64(duration.Hours() / 24), 0 // a lot of time left
+}
+
+// define the interval
+var defaultInterval time.Duration = LoadInterval("config.json")
+
 // func to get all records
-func getRecords(userId string) ([]dataRecord, error) {
-	var records []dataRecord
+func getRecords(userId string) ([]dataRecordExtended, error) {
+	var records []dataRecordExtended
 	var recUserId string
 
 	rows, err := db.Query("SELECT * FROM records WHERE created_by = $1", userId)
@@ -26,11 +85,13 @@ func getRecords(userId string) ([]dataRecord, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var rec dataRecord
+		var rec dataRecordExtended
 
 		if err := rows.Scan(&rec.Id, &rec.Title, &rec.Comment, &rec.LastDate, &recUserId); err != nil {
 			return nil, fmt.Errorf("error reading records: %v", err)
 		}
+
+		rec.TimeLeft, rec.TimeCode = checkTimeInterval(rec.LastDate, defaultInterval)
 
 		records = append(records, rec)
 	}
@@ -38,8 +99,8 @@ func getRecords(userId string) ([]dataRecord, error) {
 	return records, nil
 }
 
-func getRecordById(recordId string, userId string) (dataRecord, error) {
-	var rec dataRecord
+func getRecordById(recordId string, userId string) (dataRecordExtended, error) {
+	var rec dataRecordExtended
 	var recUserId string
 
 	row := db.QueryRow("SELECT * FROM records WHERE id = $1 AND created_by = $2", recordId, userId)
@@ -49,6 +110,9 @@ func getRecordById(recordId string, userId string) (dataRecord, error) {
 		}
 		return rec, fmt.Errorf("recordById %s: %v", recordId, err)
 	}
+
+	rec.TimeLeft, rec.TimeCode = checkTimeInterval(rec.LastDate, defaultInterval)
+
 	return rec, nil
 }
 
