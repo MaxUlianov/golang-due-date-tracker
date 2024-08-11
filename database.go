@@ -9,7 +9,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var db *sql.DB
+type DBInstance struct {
+	self *sql.DB
+}
 
 type DBConfig struct {
 	User     string
@@ -19,6 +21,8 @@ type DBConfig struct {
 	Name     string
 	Params   string
 }
+
+var db_instance DBInstance
 
 func NewDBConfig() (*DBConfig, error) {
 	user := os.Getenv("DB_USER")
@@ -41,7 +45,7 @@ func NewDBConfig() (*DBConfig, error) {
 	}, nil
 }
 
-func handlePostgres() {
+func handlePostgres() *sql.DB {
 
 	postgresConfig, configErr := NewDBConfig()
 	if configErr != nil {
@@ -59,16 +63,18 @@ func handlePostgres() {
 	)
 
 	var err error
-	db, err = sql.Open("postgres", connectString)
+	database, err := sql.Open("postgres", connectString)
 
 	if err != nil {
 		log.Fatal(fmt.Errorf("database connection error: %w", err))
 	}
 
 	// check connect
-	pingErr := db.Ping()
+	pingErr := database.Ping()
 	if pingErr != nil {
 		log.Fatal(pingErr)
 	}
 	log.Println("Database Connected!")
+
+	return database
 }

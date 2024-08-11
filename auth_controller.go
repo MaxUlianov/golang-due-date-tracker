@@ -12,10 +12,10 @@ type userModel struct {
 	Password string
 }
 
-func authUser(username string, password string) bool {
+func authUser(db DBInstance, username string, password string) bool {
 	var hashedPassword string
 
-	err := db.QueryRow("SELECT password FROM app_users WHERE username = $1", username).Scan(&hashedPassword)
+	err := db.self.QueryRow("SELECT password FROM app_users WHERE username = $1", username).Scan(&hashedPassword)
 	if err != nil {
 		return false
 	}
@@ -24,9 +24,9 @@ func authUser(username string, password string) bool {
 	return err == nil
 }
 
-func createUser(user userModel) (string, error) {
+func createUser(db DBInstance, user userModel) (string, error) {
 
-	result, err := db.Exec("INSERT INTO app_users (username, password) VALUES ($1, $2)", user.Username, user.Password)
+	result, err := db.self.Exec("INSERT INTO app_users (username, password) VALUES ($1, $2)", user.Username, user.Password)
 	if err != nil {
 		return "0", fmt.Errorf("addUser: %v", err)
 	}
@@ -34,13 +34,14 @@ func createUser(user userModel) (string, error) {
 	if err != nil {
 		return "0", fmt.Errorf("addUser: %v", err)
 	}
-	return string(id), nil
+	return fmt.Sprintf("%d", id), nil
+
 }
 
-func getUserId(username string) (string, error) {
+func getUserId(db DBInstance, username string) (string, error) {
 	var userId string
 
-	err := db.QueryRow("SELECT id FROM app_users WHERE username = $1", username).Scan(&userId)
+	err := db.self.QueryRow("SELECT id FROM app_users WHERE username = $1", username).Scan(&userId)
 	if err != nil {
 		return "", fmt.Errorf("addUser: %v", err)
 	}

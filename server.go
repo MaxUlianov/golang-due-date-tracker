@@ -71,7 +71,7 @@ func userRegisterHandler(w http.ResponseWriter, r *http.Request) {
 			Password: string(hashedPassword),
 		}
 
-		_, err = createUser(newUser)
+		_, err = createUser(db_instance, newUser)
 		if err != nil {
 			http.Error(w, "Error creating user"+err.Error(), http.StatusInternalServerError)
 			return
@@ -99,7 +99,7 @@ func userLoginHandler(w http.ResponseWriter, r *http.Request) {
 			renderStringTemplate(w, "user_input", "register")
 		}
 
-		userAuthenticated := authUser(username, password)
+		userAuthenticated := authUser(db_instance, username, password)
 		if !userAuthenticated {
 			http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 			return
@@ -145,13 +145,13 @@ func emptySession(w http.ResponseWriter, r *http.Request) {
 
 func recordListViewHandler(w http.ResponseWriter, r *http.Request) {
 	username, _ := checkSession(r)
-	userId, err := getUserId(username)
+	userId, err := getUserId(db_instance, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	records, err := getRecords(userId)
+	records, err := getRecords(db_instance, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -164,13 +164,13 @@ func recordDetailsViewHandler(w http.ResponseWriter, r *http.Request) {
 	recordId := r.PathValue("recordId")
 
 	username, _ := checkSession(r)
-	userId, err := getUserId(username)
+	userId, err := getUserId(db_instance, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	record, err := getRecordById(recordId, userId)
+	record, err := getRecordById(db_instance, recordId, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -204,13 +204,13 @@ func recordCreateViewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		username, _ := checkSession(r)
-		userId, err := getUserId(username)
+		userId, err := getUserId(db_instance, username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		_, createErr := createRecord(record, userId)
+		_, createErr := createRecord(db_instance, record, userId)
 		if createErr != nil {
 			http.Error(w, "Error creating new record", http.StatusInternalServerError)
 			return
@@ -252,13 +252,13 @@ func recordUpdateViewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		username, _ := checkSession(r)
-		userId, err := getUserId(username)
+		userId, err := getUserId(db_instance, username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		_, createErr := updateRecord(record, userId)
+		_, createErr := updateRecord(db_instance, record, userId)
 		if createErr != nil {
 			http.Error(w, "Error updating record", http.StatusInternalServerError)
 			return
@@ -269,13 +269,13 @@ func recordUpdateViewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username, _ := checkSession(r)
-	userId, err := getUserId(username)
+	userId, err := getUserId(db_instance, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	recordToUpdate, err := getRecordById(recordId, userId)
+	recordToUpdate, err := getRecordById(db_instance, recordId, userId)
 	if err != nil {
 		http.Error(w, "Error getting record to update", http.StatusInternalServerError)
 		return
@@ -291,13 +291,13 @@ func recordDeleteViewHandler(w http.ResponseWriter, r *http.Request) {
 		recordId := r.PathValue("recordId")
 
 		username, _ := checkSession(r)
-		userId, err := getUserId(username)
+		userId, err := getUserId(db_instance, username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		_, deleteErr := deleteRecord(recordId, userId)
+		_, deleteErr := deleteRecord(db_instance, recordId, userId)
 		if deleteErr != nil {
 			http.Error(w, deleteErr.Error(), http.StatusInternalServerError)
 			return
